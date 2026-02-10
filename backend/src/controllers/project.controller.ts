@@ -11,7 +11,7 @@ export const submitIdea = async (req: AuthRequest, res: Response) => {
             targetMarket,
             techStack,
         } = req.body;
-    
+
         const project = await ProjectIdea.create({
             founderId: req.user!.userId,
             title,
@@ -20,7 +20,7 @@ export const submitIdea = async (req: AuthRequest, res: Response) => {
             targetMarket,
             techStack,
         });
-    
+
         res.status(201).json(project);
 
     } catch (error) {
@@ -31,11 +31,30 @@ export const submitIdea = async (req: AuthRequest, res: Response) => {
 
 export const getMyIdeas = async (req: AuthRequest, res: Response) => {
     try {
-        const ideas = await ProjectIdea.find({
-            founderId: req.user!.userId,
-        }).sort({ createdAt: -1 });
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = req.query.search as string;
 
-        res.json(ideas);
+        const query: any = {
+            founderId: req.user!.userId,
+        };
+
+        if (search) {
+            query.title = { $regex: search, $options: "i" };
+        }
+
+        const total = await ProjectIdea.countDocuments(query);
+        const ideas = await ProjectIdea.find(query)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        res.json({
+            projects: ideas,
+            total,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+        });
     } catch (error) {
         console.error("Error in getMyIdeas controller:", error);
         res.status(500).json({ message: "Internal server error" });

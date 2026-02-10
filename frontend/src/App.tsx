@@ -1,35 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import RoleGuard from './components/RoleGuard';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import Navbar from './components/Navbar';
 
-function App() {
-  const [count, setCount] = useState(0)
+import Login from './pages/Login';
+import Register from './pages/Register';
+import FounderDashboard from './pages/founder/FounderDashboard';
+import SubmitIdea from './pages/founder/SubmitIdea';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ProjectDetails from './pages/founder/ProjectDetails';
 
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <Toaster position="top-right" />
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
 
-export default App
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route
+              path="/founder"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard role="founder">
+                    <FounderDashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/submit"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard role="founder">
+                    <SubmitIdea />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/founder/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard role="founder">
+                    <ProjectDetails />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard role="admin">
+                    <AdminDashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
