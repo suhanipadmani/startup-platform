@@ -12,6 +12,8 @@ import FounderDashboard from './pages/founder/FounderDashboard';
 import SubmitIdea from './pages/founder/SubmitIdea';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProjectDetails from './pages/founder/ProjectDetails';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
 
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
 
             <Route
               path="/founder"

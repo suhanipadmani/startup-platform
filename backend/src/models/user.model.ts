@@ -24,6 +24,8 @@ const userSchema = new Schema(
             enum: ["admin", "founder"],
             default: "founder",
         },
+        resetPasswordToken: String,
+        resetPasswordExpire: Date,
     },
     { timestamps: true }
 );
