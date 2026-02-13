@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { api } from '../../api/axios';
 import StatusBadge from '../../components/StatusBadge';
 import { PlusCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useSocket } from '../../context/SocketContext';
 
 export default function FounderDashboard() {
+    const { socket } = useSocket();
     const [ideas, setIdeas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -38,7 +41,20 @@ export default function FounderDashboard() {
 
     useEffect(() => {
         fetchProjects();
-    }, [debouncedSearch, page]);
+
+        if (socket) {
+            socket.on('project:updated', (data: any) => {
+                toast(`Your project "${data.title}" has been ${data.status}`, {
+                    duration: 4000,
+                });
+                fetchProjects();
+            });
+        }
+
+        return () => {
+            if (socket) socket.off('project:updated');
+        };
+    }, [debouncedSearch, page, socket]);
 
     if (loading && page === 1 && !debouncedSearch) {
         return (

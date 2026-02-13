@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { ProjectIdea } from "../models/projectIdea.model";
+import { getIO } from "../utils/socket";
 
 export const submitIdea = async (req: AuthRequest, res: Response) => {
     try {
@@ -20,6 +21,12 @@ export const submitIdea = async (req: AuthRequest, res: Response) => {
             targetMarket,
             techStack,
         });
+
+        try {
+            getIO().emit("project:created", project);
+        } catch (err) {
+            console.error("Socket emit failed", err);
+        }
 
         res.status(201).json(project);
 

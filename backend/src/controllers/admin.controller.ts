@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { ProjectIdea } from "../models/projectIdea.model";
 import { ReviewLog } from "../models/reviewLog.model";
+import { getIO } from "../utils/socket";
 
 export const getAllProjects = async (req: Request, res: Response) => {
     const filter: any = {};
@@ -43,6 +44,12 @@ export const approveProject = async (req: AuthRequest, res: Response) => {
         comment,
     });
 
+    try {
+        getIO().emit("project:updated", project);
+    } catch (err) {
+        console.error("Socket emit failed", err);
+    }
+
     res.json({ message: "Project approved" });
 };
 
@@ -72,6 +79,12 @@ export const rejectProject = async (req: AuthRequest, res: Response) => {
         action: "rejected",
         comment,
     });
+
+    try {
+        getIO().emit("project:updated", project);
+    } catch (err) {
+        console.error("Socket emit failed", err);
+    }
 
     res.json({ message: "Project rejected" });
 };

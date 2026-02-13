@@ -6,8 +6,10 @@ import StatusBadge from '../../components/StatusBadge';
 import GrowthLineChart from '../../components/charts/GrowthLineChart';
 import ProjectStatusChart from '../../components/charts/ProjectStatusChart';
 import { Check, X, Clock, Users, FileText, TrendingUp } from 'lucide-react';
+import { useSocket } from '../../context/SocketContext';
 
 export default function AdminDashboard() {
+    const { socket } = useSocket();
     const [ideas, setIdeas] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [growth, setGrowth] = useState<any>(null);
@@ -32,7 +34,18 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         load();
-    }, []);
+
+        if (socket) {
+            socket.on('project:created', () => {
+                toast('New project received!', { icon: '🔔' });
+                load();
+            });
+        }
+
+        return () => {
+            if (socket) socket.off('project:created');
+        };
+    }, [socket]);
 
     const review = async (id: string, action: 'approve' | 'reject') => {
         const comment = prompt(`Enter reason for ${action}ing this idea: `);
@@ -40,7 +53,11 @@ export default function AdminDashboard() {
 
         try {
             await api.put(`/admin/projects/${id}/${action}`, { comment });
-            toast.success(`Idea ${action}ed successfully`);
+            if (action === 'approve') {
+                toast.success(`Idea approved successfully`);
+            } else {
+                toast.success(`Idea rejected successfully`);
+            }
             load();
         } catch (err: any) {
             toast.error('Action failed');
