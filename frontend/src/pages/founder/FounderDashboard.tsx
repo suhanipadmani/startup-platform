@@ -12,14 +12,7 @@ export default function FounderDashboard() {
     const [totalPages, setTotalPages] = useState(1);
     const [debouncedSearch, setDebouncedSearch] = useState(search);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    useEffect(() => {
+    const fetchProjects = () => {
         setLoading(true);
         api.get(`/projects/my`, {
             params: {
@@ -34,6 +27,17 @@ export default function FounderDashboard() {
             })
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
+        fetchProjects();
     }, [debouncedSearch, page]);
 
     if (loading && page === 1 && !debouncedSearch) {

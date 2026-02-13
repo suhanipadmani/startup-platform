@@ -1,23 +1,38 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../api/axios';
+import { getSystemStats, getGrowthStats } from '../../api/analytics';
 import StatusBadge from '../../components/StatusBadge';
-import { Check, X, Clock } from 'lucide-react';
+import GrowthLineChart from '../../components/charts/GrowthLineChart';
+import ProjectStatusChart from '../../components/charts/ProjectStatusChart';
+import { Check, X, Clock, Users, FileText, TrendingUp } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [ideas, setIdeas] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [growth, setGrowth] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'pending' | 'reviewed'>('pending');
 
     const load = () => {
         setLoading(true);
-        api.get('/admin/projects')
-            .then(res => setIdeas(res.data))
-            .catch(() => toast.error('Failed to load ideas'))
+        Promise.all([
+            api.get('/admin/projects'),
+            getSystemStats(),
+            getGrowthStats()
+        ])
+            .then(([resProjects, resStats, resGrowth]) => {
+                setIdeas(resProjects.data);
+                setStats(resStats);
+                setGrowth(resGrowth);
+            })
+            .catch(() => toast.error('Failed to load dashboard data'))
             .finally(() => setLoading(false));
     };
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => {
+        load();
+    }, []);
 
     const review = async (id: string, action: 'approve' | 'reject') => {
         const comment = prompt(`Enter reason for ${action}ing this idea: `);
@@ -36,7 +51,7 @@ export default function AdminDashboard() {
         filter === 'pending' ? i.status === 'pending' : i.status !== 'pending'
     );
 
-    if (loading && ideas.length === 0) {
+    if (loading && !stats) {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -48,6 +63,74 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0">
                 <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+
+                {/* Analytics Section */}
+                {stats && (
+                    <div className="mb-12">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <TrendingUp className="w-5 h-5 mr-2" />
+                            Platform Analytics
+                        </h2>
+
+                        {/* Summary Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-100 flex items-center">
+                                <div className="p-3 bg-indigo-100 rounded-full mr-4">
+                                    <Users className="text-indigo-600 w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Total Users</p>
+                                    <p className="text-2xl font-bold text-gray-800">{stats.users.total}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-100 flex items-center">
+                                <div className="p-3 bg-pink-100 rounded-full mr-4">
+                                    <Users className="text-pink-600 w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Founders</p>
+                                    <p className="text-2xl font-bold text-gray-800">{stats.users.founders}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-100 flex items-center">
+                                <div className="p-3 bg-purple-100 rounded-full mr-4">
+                                    <FileText className="text-purple-600 w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Total Projects</p>
+                                    <p className="text-2xl font-bold text-gray-800">{stats.projects.total}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-100 flex items-center">
+                                <div className="p-3 bg-yellow-100 rounded-full mr-4">
+                                    <Clock className="text-yellow-600 w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Pending Review</p>
+                                    <p className="text-2xl font-bold text-gray-800">{stats.projects.pending}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Charts */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-100 lg:col-span-2">
+                                {growth && (
+                                    <GrowthLineChart
+                                        userGrowth={growth.userGrowth}
+                                        projectGrowth={growth.projectGrowth}
+                                    />
+                                )}
+                            </div>
+                            <div className="bg-white p-6 rounded-lg shadow border border-gray-100 flex flex-col items-center">
+                                <h3 className="text-lg font-medium text-gray-700 mb-4">Project Status</h3>
+                                <div className="w-full max-w-xs">
+                                    <ProjectStatusChart stats={stats.projects} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="border-b border-gray-200 mb-6">
                     <nav className="-mb-px flex space-x-8">
