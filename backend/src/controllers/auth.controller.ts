@@ -10,19 +10,6 @@ export const register = async (req: Request, res: Response) => {
     const { name, email, password } = req.body;
 
     try {
-        if (!name || !email || !password) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({ message: "Password must be at least 6 characters long" });
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ message: "Invalid email address" });
-        }
-
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "Email already exists" });
@@ -50,6 +37,7 @@ export const register = async (req: Request, res: Response) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                createdAt: user.createdAt,
             },
         });
 
@@ -63,18 +51,14 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     try {
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
-        }
-
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({ message: "Invalid credentials" });
+            return res.status(404).json({ message: "Invalid credentials" });
         }
 
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
-            return res.status(401).json({ message: "Invalid credentials" });
+            return res.status(404).json({ message: "Invalid credentials" });
         }
 
         const token = generateToken(user._id.toString(), user.role);
@@ -84,7 +68,9 @@ export const login = async (req: Request, res: Response) => {
             user: {
                 id: user._id,
                 name: user.name,
+                email: user.email,
                 role: user.role,
+                createdAt: user.createdAt,
             },
         });
     } catch (error) {
@@ -98,7 +84,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
         const userId = req.user?.userId;
 
         if (!userId) {
-            return res.status(401).json({ message: "Unauthorized: User ID not found in request" });
+            return res.status(401).json({ message: "Unauthorized" });
         }
 
         const user = await User.findById(userId);
@@ -112,6 +98,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            createdAt: user.createdAt
         });
     } catch (error) {
         console.error("Error in getMe:", error);
@@ -140,16 +127,13 @@ export const forgotPassword = async (req: Request, res: Response) => {
         user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
         // Set expire
-        user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000); 
+        user.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
 
         await user.save();
 
         // Create reset URL
-        const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
         const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${frontendUrl}/reset-password/${resetToken}`;
-
-        console.log('RESET URL:', `${frontendUrl}/reset-password/${resetToken}`);
 
         try {
             await sendEmail({
@@ -177,7 +161,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
     try {
         // Get hashed token
-        const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken as string).digest('hex');
+        const resetToken = req.params.token;
+        if (typeof resetToken !== 'string') {
+            return res.status(400).json({ message: "Invalid token" });
+        }
+        const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
         const user = await User.findOne({
             resetPasswordToken,
@@ -203,7 +191,9 @@ export const resetPassword = async (req: Request, res: Response) => {
             user: {
                 id: user._id,
                 name: user.name,
+                email: user.email,
                 role: user.role,
+                createdAt: user.createdAt,
             },
         });
 
@@ -213,3 +203,74 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 };
 
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+        const { name, email } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (name) user.name = name;
+        if (email) user.email = email;
+
+        await user.save();
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            createdAt: user.createdAt
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating profile" });
+    }
+};
+
+export const changePassword = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user!.userId;
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid current password" });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        res.json({ message: "Password updated successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error changing password" });
+    }
+};
+
+export const deleteAccount = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const user = await User.findByIdAndDelete(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "Account deleted successfully" });
+    } catch (error) {
+        console.error("Error in deleteAccount:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

@@ -1,105 +1,158 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { api } from '../../api/axios';
-import StatusBadge from '../../components/StatusBadge';
-import { ArrowLeft, Clock, } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useParams, Link } from 'react-router-dom';
+import { useIdea } from '../../hooks/useIdeas';
+import { Loader } from '../../components/ui/Loader';
+import { Button } from '../../components/ui/Button';
+import { ArrowLeft, Calendar, Code, Target, FileText } from 'lucide-react';
+import { cn } from '../../utils/cn';
 
-export default function ProjectDetails() {
+import { AxiosError } from 'axios';
+
+const ProjectDetails = () => {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const [idea, setIdea] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const { data: idea, isLoading, error } = useIdea(id!);
 
-    useEffect(() => {
-        if (!id) return;
+    if (isLoading) return <div className="h-96 flex items-center justify-center"><Loader size="lg" /></div>;
 
-        setLoading(true);
-        api.get(`/projects/${id}`)
-            .then(res => setIdea(res.data))
-            .catch(err => {
-                console.error(err);
-                toast.error('Failed to load project details');
-                navigate('/founder');
-            })
-            .finally(() => setLoading(false));
-    }, [id, navigate]);
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            </div>
-        );
+    if (error) {
+        const axiosError = error as AxiosError<{ message: string }>;
+        if (axiosError.response?.status === 404) {
+            return (
+                <div className="flex flex-col items-center justify-center h-96 text-center px-4">
+                    <div className="bg-gray-100 p-4 rounded-full mb-4">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Not Found</h2>
+                    <p className="text-gray-500 mb-6 max-w-md">
+                        {axiosError.response.data?.message || "The project you are looking for does not exist or has been removed."}
+                    </p>
+                    <Link to="/founder">
+                        <Button>
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back to Dashboard
+                        </Button>
+                    </Link>
+                </div>
+            );
+        }
+        return <div className="text-center text-red-500 mt-10">Error loading project details.</div>;
     }
 
     if (!idea) return null;
-
     return (
-        <div className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
-                <div className="mb-6">
-                    <Link to="/founder" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
-                        <ArrowLeft className="mr-1 h-4 w-4" />
+        <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+                <Link to="/founder">
+                    <Button variant="ghost" size="sm" className="pl-0 hover:bg-transparent hover:text-blue-600">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to Dashboard
-                    </Link>
-                </div>
+                    </Button>
+                </Link>
+            </div>
 
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-100">
-                    <div className="px-4 py-5 sm:px-6 flex justify-between items-start bg-gray-50">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">{idea.title}</h1>
-                            <div className="mt-2 flex items-center text-sm text-gray-500">
-                                <Clock className="mr-1.5 h-4 w-4 text-gray-400" />
-                                Submitted on {new Date(idea.createdAt).toLocaleString()}
+            <div className="space-y-6">
+                {/* Header Card */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                                        {idea.title}
+                                    </h1>
+                                    <span className={cn(
+                                        "px-2.5 py-0.5 rounded-full text-xs font-medium w-fit",
+                                        idea.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                            idea.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                'bg-yellow-100 text-yellow-800'
+                                    )}>
+                                        {idea.status.charAt(0).toUpperCase() + idea.status.slice(1)}
+                                    </span>
+                                </div>
+                                <div className="mt-3 flex items-center text-sm text-gray-500">
+                                    <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                                    <span>Submitted on {new Date(idea.createdAt).toLocaleDateString()}</span>
+                                </div>
                             </div>
                         </div>
-                        <StatusBadge status={idea.status} />
-                    </div>
-
-                    <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-                        <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                            <div className="sm:col-span-2">
-                                <dt className="text-sm font-medium text-gray-500">Problem Statement</dt>
-                                <dd className="mt-1 text-sm text-gray-900 bg-gray-50 p-4 rounded-md border border-gray-100">
-                                    {idea.problemStatement}
-                                </dd>
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <dt className="text-sm font-medium text-gray-500">Proposed Solution</dt>
-                                <dd className="mt-1 text-sm text-gray-900 bg-gray-50 p-4 rounded-md border border-gray-100">
-                                    {idea.solution}
-                                </dd>
-                            </div>
-
-                            <div className="sm:col-span-1">
-                                <dt className="text-sm font-medium text-gray-500">Target Market</dt>
-                                <dd className="mt-1 text-sm text-gray-900">{idea.targetMarket}</dd>
-                            </div>
-
-                            <div className="sm:col-span-1">
-                                <dt className="text-sm font-medium text-gray-500">Technology Stack</dt>
-                                <dd className="mt-1 text-sm text-gray-900">
-                                    {Array.isArray(idea.techStack) ? idea.techStack.join(', ') : idea.techStack}
-                                </dd>
-                            </div>
-
-                            {idea.adminComment && (
-                                <div className="sm:col-span-2 mt-4">
-                                    <dt className="text-sm font-medium text-gray-500">Admin Feedback</dt>
-                                    <dd className="mt-1 text-sm text-gray-900 bg-yellow-50 p-4 rounded-md border border-yellow-100 italic">
-                                        "{idea.adminComment}"
-                                    </dd>
-                                </div>
-                            )}
-                        </dl>
                     </div>
                 </div>
+
+                {/* Content Cards Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Problem Statement */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col">
+                        <h3 className="text-base font-semibold text-gray-900 flex items-center mb-4">
+                            <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                <FileText className="w-5 h-5 text-blue-600" />
+                            </div>
+                            Problem Statement
+                        </h3>
+                        <div className="prose prose-sm text-gray-600 flex-grow">
+                            <p className="leading-relaxed whitespace-pre-wrap">{idea.problemStatement}</p>
+                        </div>
+                    </div>
+
+                    {/* Solution */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col">
+                        <h3 className="text-base font-semibold text-gray-900 flex items-center mb-4">
+                            <div className="bg-green-100 p-2 rounded-lg mr-3">
+                                <FileText className="w-5 h-5 text-green-600" />
+                            </div>
+                            Proposed Solution
+                        </h3>
+                        <div className="prose prose-sm text-gray-600 flex-grow">
+                            <p className="leading-relaxed whitespace-pre-wrap">{idea.solution}</p>
+                        </div>
+                    </div>
+
+                    {/* Target Market */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-1">
+                        <h3 className="text-base font-semibold text-gray-900 flex items-center mb-4">
+                            <div className="bg-red-100 p-2 rounded-lg mr-3">
+                                <Target className="w-5 h-5 text-red-600" />
+                            </div>
+                            Target Market
+                        </h3>
+                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{idea.targetMarket}</p>
+                    </div>
+
+                    {/* Tech Stack */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-1">
+                        <h3 className="text-base font-semibold text-gray-900 flex items-center mb-4">
+                            <div className="bg-purple-100 p-2 rounded-lg mr-3">
+                                <Code className="w-5 h-5 text-purple-600" />
+                            </div>
+                            Technology Stack
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {idea.techStack.map(tech => (
+                                <span key={tech} className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                                    {tech}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Admin Feedback */}
+                {idea.adminComment && (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-6">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4">Admin Feedback</h3>
+                            <div className={cn(
+                                "p-4 rounded-lg border flex items-start",
+                                idea.status === 'approved' ? 'bg-green-50 border-green-200 text-green-800' :
+                                    idea.status === 'rejected' ? 'bg-red-50 border-red-200 text-red-800' :
+                                        'bg-gray-50 border-gray-200 text-gray-800'
+                            )}>
+                                <span className="text-sm leading-relaxed">{idea.adminComment}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
-}
+};
 
-
-
+export default ProjectDetails;

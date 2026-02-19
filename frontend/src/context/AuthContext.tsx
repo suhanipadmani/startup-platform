@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { me } from '../api/auth.api';
-import type { User } from '../types';
+import type { IUser } from '../types';
+import { authService } from '../services/auth.service';
 
 const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }: any) => {
       return;
     }
 
-    me()
-      .then(res => setUser(res.data))
+    authService.getMe()
+      .then((data: any) => setUser(data))
       .catch(() => {
         localStorage.removeItem('token');
         setUser(null);
