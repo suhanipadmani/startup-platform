@@ -6,6 +6,7 @@ import RoleGuard from './components/common/RoleGuard';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
+import { SocketProvider } from './context/SocketContext';
 
 import Login from './components/auth/LoginForm';
 import Register from './components/auth/RegisterForm';
@@ -31,147 +32,150 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Toaster position="top-right" />
-          <Routes>
-            {/* Auth Routes */}
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
-            </Route>
+          <SocketProvider>
+            <Toaster position="top-right" />
+            <Routes>
+              {/* Auth Routes */}
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+              </Route>
 
-            {/* Protected Routes */}
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Navigate to="/login" replace />} />
+              {/* Protected Routes */}
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Navigate to="/login" replace />} />
 
-              {/* Founder Routes */}
-              <Route
-                path="/founder"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="founder">
-                      <FounderDashboard />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/founder/submit"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="founder">
-                      <SubmitIdea />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/founder/projects/:id"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="founder">
-                      <ProjectDetails />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/founder/ideas/:id/edit"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="founder">
-                      <EditIdea />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/founder/ideas"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="founder">
-                      <StartupIdeaList />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              {/* Admin Routes */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="admin">
-                      <AdminDashboard />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/reviews/pending"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="admin">
-                      <PendingReviews />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/reviews/history"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="admin">
-                      <ReviewHistory />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users"
-                element={
-                  <ProtectedRoute>
-                    <RoleGuard role="admin">
-                      <UsersList />
-                    </RoleGuard>
-                  </ProtectedRoute>
-                }
-              />
+                {/* Founder Routes */}
+                <Route
+                  path="/founder"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="founder">
+                        <FounderDashboard />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/submit"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="founder">
+                        <SubmitIdea />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/projects/:id"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="founder">
+                        <ProjectDetails />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/ideas/:id/edit"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="founder">
+                        <EditIdea />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/founder/ideas"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="founder">
+                        <StartupIdeaList />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Admin Routes */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="admin">
+                        <AdminDashboard />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reviews/pending"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="admin">
+                        <PendingReviews />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reviews/history"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="admin">
+                        <ReviewHistory />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="admin">
+                        <UsersList />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* User Profile - Shared */}
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile/edit"
-                element={
-                  <ProtectedRoute>
-                    <EditProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile/change-password"
-                element={
-                  <ProtectedRoute>
-                    <ChangePasswordPage />
-                  </ProtectedRoute>
-                }
-              />
+                {/* User Profile - Shared */}
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile/edit"
+                  element={
+                    <ProtectedRoute>
+                      <EditProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile/change-password"
+                  element={
+                    <ProtectedRoute>
+                      <ChangePasswordPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-            </Route>
+              </Route>
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </SocketProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
+
 export default App;

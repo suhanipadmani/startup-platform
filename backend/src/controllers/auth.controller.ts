@@ -213,19 +213,27 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        if (email && email !== user.email) {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ message: "Email already in use" });
+            }
+            user.email = email;
+        }
+
         if (name) user.name = name;
-        if (email) user.email = email;
 
         await user.save();
 
         res.json({
-            _id: user._id,
+            id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
             createdAt: user.createdAt
         });
     } catch (error) {
+        console.error("Error updating profile:", error);
         res.status(500).json({ message: "Error updating profile" });
     }
 };
@@ -250,6 +258,7 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 
         res.json({ message: "Password updated successfully" });
     } catch (error) {
+        console.error("Error changing password:", error);
         res.status(500).json({ message: "Error changing password" });
     }
 };

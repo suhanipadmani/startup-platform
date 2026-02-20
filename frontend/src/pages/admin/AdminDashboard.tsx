@@ -1,11 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader } from '../../components/ui/Loader';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 import apiInstance from '../../services/api';
 import ProjectList from '../../components/admin/ProjectList';
+import { useSocket } from '../../context/SocketContext';
 
 const AdminDashboard = () => {
+    const queryClient = useQueryClient();
+    const { socket } = useSocket();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIdeaCreated = () => {
+            queryClient.invalidateQueries({ queryKey: ['admin'] });
+        };
+
+        socket.on('idea:created', handleIdeaCreated);
+
+        return () => {
+            socket.off('idea:created', handleIdeaCreated);
+        };
+    }, [socket, queryClient]);
+
     const { data: stats, isLoading: isLoadingStats } = useQuery({
         queryKey: ['admin', 'stats'],
         queryFn: async () => {

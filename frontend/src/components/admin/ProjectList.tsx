@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ideaService } from '../../services/idea.service';
 import { Loader } from '../ui/Loader';
@@ -8,6 +8,7 @@ import { Modal } from '../ui/Modal';
 import { Textarea } from '../ui/Textarea';
 import { showToast } from '../../utils/toast';
 import type { IProjectIdea } from '../../types';
+import { useSocket } from '../../context/SocketContext';
 
 interface ProjectListProps {
     initialStatus?: string;
@@ -22,6 +23,21 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
     const [action, setAction] = useState<'approve' | 'reject' | null>(null);
     const [comment, setComment] = useState('');
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const { socket } = useSocket();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleIdeaCreated = () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'projects'] });
+        };
+
+        socket.on('idea:created', handleIdeaCreated);
+
+        return () => {
+            socket.off('idea:created', handleIdeaCreated);
+        };
+    }, [socket, queryClient]);
 
     // Filters & Pagination
     const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
@@ -135,7 +151,7 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-full"> {/* Ensure full height if needed, keeping simple */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col pb-24"> {/* pb-24 to make room for fixed pagination */}
             <div className="px-6 py-4 border-b">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -238,38 +254,42 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
 
             {/* Pagination */}
             {!isLoadingProjects && totalPages > 1 && (
-                <div className="px-6 py-4 border-t flex justify-center">
-                    <div className="flex items-center space-x-1">
+                <div className="fixed bottom-8 left-0 md:left-64 right-0 flex justify-center z-20 pointer-events-none">
+                    <div className="inline-flex items-center space-x-1 bg-white/95 backdrop-blur-sm p-2 rounded-full shadow-xl pointer-events-auto border border-gray-200">
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handlePageChange(page - 1)}
                             disabled={page === 1}
+                            className="rounded-full px-4"
                         >
                             Previous
                         </Button>
 
-                        {getPageNumbers().map((pageNum, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => typeof pageNum === 'number' ? handlePageChange(pageNum) : null}
-                                disabled={typeof pageNum !== 'number'}
-                                className={`px-3 py-1 text-sm rounded-md transition-colors ${pageNum === page
-                                    ? 'bg-blue-600 text-white'
-                                    : typeof pageNum === 'number'
-                                        ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                        : 'text-gray-500 cursor-default'
-                                    }`}
-                            >
-                                {pageNum}
-                            </button>
-                        ))}
+                        <div className="flex items-center px-2">
+                            {getPageNumbers().map((pageNum, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => typeof pageNum === 'number' ? handlePageChange(pageNum) : null}
+                                    disabled={typeof pageNum !== 'number'}
+                                    className={`w-10 h-10 flex items-center justify-center text-sm rounded-full transition-colors mx-0.5 ${pageNum === page
+                                        ? 'bg-blue-600 text-white'
+                                        : typeof pageNum === 'number'
+                                            ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                                            : 'text-gray-500 cursor-default'
+                                        }`}
+                                >
+                                    {pageNum}
+                                </button>
+                            ))}
+                        </div>
 
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handlePageChange(page + 1)}
                             disabled={page === totalPages}
+                            className="rounded-full px-4"
                         >
                             Next
                         </Button>

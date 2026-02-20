@@ -1,12 +1,34 @@
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Loader } from '../../components/ui/Loader';
 import { PlusCircle, FileText, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
 import { useIdeaStats } from '../../hooks/useIdeaStats';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useSocket } from '../../context/SocketContext';
 
 const FounderDashboard = () => {
+    const queryClient = useQueryClient();
+    const { socket } = useSocket();
     const { stats, isLoading } = useIdeaStats();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleUpdate = () => {
+            queryClient.invalidateQueries({ queryKey: ['idea-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['ideas'] });
+        };
+
+        socket.on('idea:created', handleUpdate);
+        socket.on('project:updated', handleUpdate);
+
+        return () => {
+            socket.off('idea:created', handleUpdate);
+            socket.off('project:updated', handleUpdate);
+        };
+    }, [socket, queryClient]);
 
     if (isLoading) return <div className="h-96 flex items-center justify-center"><Loader size="lg" /></div>;
 

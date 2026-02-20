@@ -11,38 +11,42 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }: Pagination
     if (totalPages <= 1) return null;
 
     return (
-        <div className="flex items-center justify-center space-x-2 mt-6">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-            >
-                <ChevronLeft className="w-4 h-4" />
-            </Button>
+        <div className="fixed bottom-8 left-0 md:left-64 right-0 flex justify-center z-20 pointer-events-none">
+            <div className="inline-flex items-center space-x-2 bg-white/95 backdrop-blur-sm border border-gray-200 p-2 rounded-full shadow-xl pointer-events-auto">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="rounded-full w-10 h-10 p-0"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </Button>
 
-            <div className="flex items-center space-x-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                        key={page}
-                        variant={currentPage === page ? 'primary' : 'ghost'}
-                        size="sm"
-                        onClick={() => onPageChange(page)}
-                        className="w-8 h-8 p-0"
-                    >
-                        {page}
-                    </Button>
-                ))}
+                <div className="flex items-center px-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                            key={page}
+                            variant={currentPage === page ? 'primary' : 'ghost'}
+                            size="sm"
+                            onClick={() => onPageChange(page)}
+                            className="w-10 h-10 p-0 rounded-full mx-0.5"
+                        >
+                            {page}
+                        </Button>
+                    ))}
+                </div>
+
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="rounded-full w-10 h-10 p-0"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </Button>
             </div>
-
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-            >
-                <ChevronRight className="w-4 h-4" />
-            </Button>
         </div>
     );
 };
