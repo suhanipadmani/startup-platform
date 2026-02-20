@@ -91,7 +91,7 @@ const FounderDashboard = () => {
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">Startup Ideas</h2>
                     <Link to="/founder/ideas">
-                        <Button variant="ghost" className="text-blue-600 hover:text-blue-800">
+                        <Button variant="ghost" className="text-blue-500 hover:text-blue-700">
                             View All Ideas <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
                     </Link>

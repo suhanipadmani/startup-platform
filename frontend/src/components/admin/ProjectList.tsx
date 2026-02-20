@@ -287,23 +287,23 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
                     <div className="space-y-6">
                         <div>
                             <h3 className="text-sm font-medium text-gray-500">Project Title</h3>
-                            <p className="mt-1 text-lg font-semibold text-gray-900">{selectedIdea.title}</p>
+                            <p className="mt-1 text-lg font-semibold text-gray-900 break-words">{selectedIdea.title}</p>
                         </div>
 
                         <div>
                             <h3 className="text-sm font-medium text-gray-500">Problem Statement</h3>
-                            <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md">{selectedIdea.problemStatement}</p>
+                            <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md break-words whitespace-pre-wrap">{selectedIdea.problemStatement}</p>
                         </div>
 
                         <div>
                             <h3 className="text-sm font-medium text-gray-500">Solution</h3>
-                            <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md">{selectedIdea.solution}</p>
+                            <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md break-words whitespace-pre-wrap">{selectedIdea.solution}</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">Target Market</h3>
-                                <p className="mt-1 text-gray-700">{selectedIdea.targetMarket}</p>
+                                <p className="mt-1 text-gray-700 break-words whitespace-pre-wrap">{selectedIdea.targetMarket}</p>
                             </div>
                             <div>
                                 <h3 className="text-sm font-medium text-gray-500">Tech Stack</h3>
@@ -333,7 +333,7 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
                                     This project was <span className={`font-semibold ${selectedIdea.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>{selectedIdea.status}</span> on {new Date(selectedIdea.updatedAt).toLocaleDateString()}.
                                 </p>
                                 {selectedIdea.adminComment && (
-                                    <p className="text-sm text-gray-600 mt-2">
+                                    <p className="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">
                                         <strong>Admin Comment:</strong> {selectedIdea.adminComment}
                                     </p>
                                 )}
@@ -350,7 +350,7 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
                 title={`${action === 'approve' ? 'Approve' : 'Reject'} Project`}
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 break-words">
                         You are about to {action} <strong>{selectedIdea?.title}</strong>. Please provide a comment for the founder.
                     </p>
                     <Textarea

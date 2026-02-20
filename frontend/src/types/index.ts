@@ -34,3 +34,11 @@ export interface IPaginatedResponse<T> {
     page: number;
     totalPages: number;
 }
+
+export interface IdeaFilters {
+    status?: string;
+    tech?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+}

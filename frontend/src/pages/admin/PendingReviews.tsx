@@ -7,8 +7,7 @@ const PendingReviews = () => {
             <ProjectList
                 initialStatus="pending"
                 title="Pending Projects"
-                showFilters={false} // Since this is specifically the "Pending" page, maybe hide filters or keep them? User said "Pending Reviews" specifically.
-            // Keeping filters false since the page implies it's only pending.
+                showFilters={false}
             />
         </div>
     );

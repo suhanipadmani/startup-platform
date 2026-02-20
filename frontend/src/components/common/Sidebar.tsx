@@ -13,7 +13,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     const { user, logout } = useAuth();
     const location = useLocation();
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-        'reviews': true // Expand by default or based on current path?
+        'reviews': true 
     });
 
     const toggleMenu = (key: string) => {
@@ -117,17 +117,17 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             {/* Mobile Overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 md:hidden"
+                    className="fixed inset-0 z-40 bg-black/50 opacity-80 md:hidden"
                     onClick={onClose}
                 ></div>
             )}
 
             {/* Sidebar */}
             <div className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
+                "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <div className="flex items-center justify-between h-16 px-6 border-b">
+                <div className="flex items-center justify-between h-16 px-6 border-b shrink-0">
                     <Link to="/" className="text-xl font-bold text-gray-800">
                         Startup Platform
                     </Link>
@@ -136,17 +136,19 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                     </button>
                 </div>
 
-                <nav className="px-4 py-6 space-y-2">
+                <nav className="px-4 py-6 space-y-2 flex-1 overflow-y-auto">
                     {links.map((link) => renderLink(link))}
+                </nav>
 
+                <div className="p-4">
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
+                        className="w-full flex items-center px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-red-50 hover:text-red-700 transition-colors text-left"
                     >
                         <LogOut className="w-5 h-5 mr-3" />
                         Logout
                     </button>
-                </nav>
+                </div>
             </div>
         </>
     );

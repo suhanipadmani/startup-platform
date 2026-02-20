@@ -1,13 +1,13 @@
 import api from './api';
-import type { IProjectIdea, IPaginatedResponse } from '../types';
+import type { IProjectIdea, IPaginatedResponse, IdeaFilters } from '../types';
 
 export const ideaService = {
-    getAllIdeas: async (params?: any) => {
+    getAllIdeas: async (params?: IdeaFilters) => {
         const response = await api.get<IProjectIdea[] | IPaginatedResponse<IProjectIdea>>('/ideas', { params });
         return response.data;
     },
 
-    getAdminIdeas: async (params?: any) => {
+    getAdminIdeas: async (params?: IdeaFilters) => {
         const response = await api.get<IPaginatedResponse<IProjectIdea>>('/admin/ideas', { params });
         return response.data;
     },

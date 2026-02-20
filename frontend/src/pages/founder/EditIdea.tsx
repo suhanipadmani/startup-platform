@@ -19,7 +19,6 @@ const EditIdea = () => {
         return <div className="text-center py-12">Idea not found</div>;
     }
 
-    // Redirect if idea is not pending
     if (idea.status !== 'pending') {
         return (
             <div className="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-sm text-center">

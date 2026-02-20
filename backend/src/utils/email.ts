@@ -30,7 +30,16 @@ const sendEmail = async (
         text: options.message,
     };
 
-    await transporter.sendMail(mailOptions);
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully');
+    } catch (error) {
+        console.error('Error sending email:', error);
+        console.log('--- MOCK EMAIL ---');
+        console.log(`To: ${options.email}`);
+        console.log(`Subject: ${options.subject}`);
+        console.log(`Message: ${options.message}`);
+    }
 };
 
 export default sendEmail;

@@ -7,7 +7,7 @@ const ReviewHistory = () => {
             <ProjectList
                 initialStatus="approved,rejected"
                 title="Historical Reviews"
-                showFilters={true} // History might benefit from filtering
+                showFilters={true}
             />
         </div>
     );
