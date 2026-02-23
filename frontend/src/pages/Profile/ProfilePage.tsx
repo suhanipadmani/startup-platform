@@ -68,19 +68,23 @@ const ProfilePage = () => {
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-gray-100">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-red-800 font-medium">Delete Account</p>
-                            <p className="text-sm text-red-600 mt-1">
-                                Permanently delete your account and all data. This action cannot be undone.
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <p className="text-red-800 font-semibold flex items-center">
+                                <AlertTriangle className="w-4 h-4 mr-2" />
+                                Delete Account
+                            </p>
+                            <p className="text-sm text-red-600 mt-1 leading-relaxed">
+                                Permanently delete your account and all data. This action is irreversible and cannot be undone.
                             </p>
                         </div>
                         <Button
                             variant="danger"
                             onClick={() => setIsDeleteModalOpen(true)}
+                            className="shrink-0"
                         >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete 
+                            Delete Account
                         </Button>
                     </div>
                 </div>
