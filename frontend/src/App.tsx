@@ -8,6 +8,7 @@ import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
 import { SocketProvider } from './context/SocketContext';
 
+import LandingPage from './pages/LandingPage';
 import Login from './components/auth/LoginForm';
 import Register from './components/auth/RegisterForm';
 import ForgotPassword from './components/auth/ForgotPasswordForm';
@@ -16,6 +17,7 @@ import FounderDashboard from './pages/founder/FounderDashboard';
 import SubmitIdea from './pages/founder/SubmitIdea';
 import ProjectDetails from './pages/founder/ProjectDetails';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProjectDetails from './pages/admin/AdminProjectDetails';
 import PendingReviews from './pages/admin/PendingReviews';
 import ReviewHistory from './pages/admin/ReviewHistory';
 import UsersList from './pages/admin/UsersList';
@@ -33,9 +35,12 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <SocketProvider>
-            <Toaster position="top-right" />
-            <Routes>
-              {/* Auth Routes */}
+              <Toaster position="top-right" />
+              <Routes>
+                {/* Landing Page */}
+                <Route path="/" element={<LandingPage />} />
+
+                {/* Auth Routes */}
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -45,7 +50,6 @@ const App = () => {
 
               {/* Protected Routes */}
               <Route element={<MainLayout />}>
-                <Route path="/" element={<Navigate to="/login" replace />} />
 
                 {/* Founder Routes */}
                 <Route
@@ -110,6 +114,16 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/admin/projects/:id"
+                  element={
+                    <ProtectedRoute>
+                      <RoleGuard role="admin">
+                        <AdminProjectDetails />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/admin/reviews/pending"
                   element={
                     <ProtectedRoute>
@@ -169,7 +183,7 @@ const App = () => {
               </Route>
 
               {/* Fallback */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </SocketProvider>
         </BrowserRouter>

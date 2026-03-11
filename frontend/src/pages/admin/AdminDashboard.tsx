@@ -41,10 +41,6 @@ const AdminDashboard = () => {
         }
     });
 
-    if (isLoadingStats || isLoadingGrowth) {
-        return <div className="h-96 flex items-center justify-center"><Loader size="lg" /></div>;
-    }
-
     return (
         <div className="space-y-8">
             <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
@@ -52,14 +48,18 @@ const AdminDashboard = () => {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Users', value: stats?.totalUsers || 0, color: 'text-blue-600', borderColor: 'border-blue-500' },
-                    { label: 'Total Ideas', value: stats?.totalIdeas || 0, color: 'text-purple-600', borderColor: 'border-purple-500' },
-                    { label: 'Pending Reviews', value: stats?.pendingIdeas || 0, color: 'text-yellow-600', borderColor: 'border-yellow-500' },
-                    { label: 'Approved Ideas', value: stats?.approvedIdeas || 0, color: 'text-green-600', borderColor: 'border-green-500' },
+                    { label: 'Total Users', value: stats?.totalUsers, color: 'text-blue-600', borderColor: 'border-blue-500' },
+                    { label: 'Total Ideas', value: stats?.totalIdeas, color: 'text-purple-600', borderColor: 'border-purple-500' },
+                    { label: 'Pending Reviews', value: stats?.pendingIdeas, color: 'text-yellow-600', borderColor: 'border-yellow-500' },
+                    { label: 'Approved Ideas', value: stats?.approvedIdeas, color: 'text-green-600', borderColor: 'border-green-500' },
                 ].map((stat, i) => (
-                    <div key={i} className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${stat.borderColor} transition-all hover:shadow-md`}>
+                    <div key={i} className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${stat.borderColor} transition-all hover:shadow-md min-h-[120px] relative`}>
                         <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                        <p className={`text-3xl font-bold mt-2 ${stat.color}`}>{stat.value}</p>
+                        {isLoadingStats ? (
+                            <div className="mt-4 h-8 w-16 bg-gray-100 animate-pulse rounded"></div>
+                        ) : (
+                            <p className={`text-3xl font-bold mt-2 ${stat.color}`}>{stat.value || 0}</p>
+                        )}
                     </div>
                 ))}
             </div>
@@ -72,42 +72,48 @@ const AdminDashboard = () => {
                         <span className="ml-2 text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">All Time</span>
                     </h2>
                 </div>
-                <div className="p-0 sm:p-6">
-                    <div style={{ width: '100%', height: 350 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={Array.isArray(growth) ? growth : []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.5} />
-                                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorIdeas" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.5} />
-                                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                <XAxis
-                                    dataKey="date"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                                />
-                                <Tooltip
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '4 4' }}
-                                />
-                                <Area type="monotone" dataKey="users" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
-                                <Area type="monotone" dataKey="ideas" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorIdeas)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+                <div className="p-0 sm:p-6 min-h-[400px] flex flex-col">
+                    {isLoadingGrowth ? (
+                        <div className="flex-1 flex items-center justify-center">
+                            <Loader size="md" />
+                        </div>
+                    ) : (
+                        <div style={{ width: '100%', height: 350 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={Array.isArray(growth) ? growth : []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.5} />
+                                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorIdeas" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.5} />
+                                            <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                    <XAxis
+                                        dataKey="date"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        cursor={{ stroke: '#9CA3AF', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                    />
+                                    <Area type="monotone" dataKey="users" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                                    <Area type="monotone" dataKey="ideas" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorIdeas)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,10 +1,10 @@
 import { useIdeas } from '../../hooks/useIdeas';
-import { IdeaForm, type IdeaFormData } from '../../components/founder/IdeaForm';
+import { IdeaForm } from '../../components/founder/IdeaForm';
 
 const SubmitIdea = () => {
     const { createIdea, isCreating } = useIdeas();
 
-    const onSubmit = (data: IdeaFormData) => {
+    const onSubmit = (data: FormData) => {
         createIdea(data);
     };
 

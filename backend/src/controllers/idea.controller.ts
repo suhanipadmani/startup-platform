@@ -6,7 +6,8 @@ import { Types } from "mongoose";
 
 export const createIdea = async (req: AuthRequest, res: Response) => {
     try {
-        const { title, problemStatement, solution, targetMarket, techStack } = req.body;
+        const { title, problemStatement, solution, targetMarket, techStack, teamDetails } = req.body;
+        const pitchDeckUrl = req.file ? `/uploads/${req.file.filename}` : "";
 
         const newIdea = await ProjectIdea.create({
             founderId: req.user!.userId,
@@ -15,6 +16,8 @@ export const createIdea = async (req: AuthRequest, res: Response) => {
             solution,
             targetMarket,
             techStack,
+            teamDetails,
+            pitchDeckUrl,
             status: "pending",
         });
 
@@ -26,6 +29,7 @@ export const createIdea = async (req: AuthRequest, res: Response) => {
 
         res.status(201).json(newIdea);
     } catch (error) {
+        console.error("Error creating idea:", error);
         res.status(500).json({ message: "Error creating idea" });
     }
 };
@@ -72,7 +76,7 @@ export const getMyIdeas = async (req: AuthRequest, res: Response) => {
 
 export const getIdeaById = async (req: AuthRequest, res: Response) => {
     try {
-        const idea = await ProjectIdea.findById(req.params.id);
+        const idea = await ProjectIdea.findById(req.params.id).populate("founderId", "name email");
         if (!idea) {
             return res.status(404).json({ message: "Idea not found" });
         }
@@ -89,23 +93,54 @@ export const updateIdea = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: "Idea not found or unauthorized" });
         }
 
+        // Allow editing if pending
         if (idea.status !== "pending") {
             return res.status(400).json({ message: "Cannot edit processed idea" });
         }
 
-        const { title, problemStatement, solution, targetMarket, techStack } = req.body;
+        const { title, problemStatement, solution, targetMarket, techStack, teamDetails } = req.body;
 
         if (title) idea.title = title;
         if (problemStatement) idea.problemStatement = problemStatement;
         if (solution) idea.solution = solution;
         if (targetMarket) idea.targetMarket = targetMarket;
         if (techStack) idea.techStack = techStack;
+        if (teamDetails) idea.teamDetails = teamDetails;
+
+        if (req.file) {
+            idea.pitchDeckUrl = `/uploads/${req.file.filename}`;
+        }
 
         await idea.save();
 
         res.json(idea);
     } catch (error) {
         res.status(500).json({ message: "Error updating idea" });
+    }
+};
+
+export const uploadDocument = async (req: AuthRequest, res: Response) => {
+    try {
+        const idea = await ProjectIdea.findOne({ _id: req.params.id, founderId: req.user!.userId });
+        if (!idea) {
+            return res.status(404).json({ message: "Idea not found or unauthorized" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        idea.documents.push({
+            name: req.body.name || req.file.originalname,
+            url: `/uploads/${req.file.filename}`,
+            uploadedAt: new Date()
+        });
+
+        await idea.save();
+
+        res.json(idea);
+    } catch (error) {
+        res.status(500).json({ message: "Error uploading document" });
     }
 };
 

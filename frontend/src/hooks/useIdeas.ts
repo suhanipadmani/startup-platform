@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ideaService } from '../services/idea.service';
-import type { IProjectIdea } from '../types';
 import { showToast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,7 +14,7 @@ export const useIdeas = (params?: any) => {
     });
 
     const createIdeaMutation = useMutation({
-        mutationFn: (data: Partial<IProjectIdea>) => ideaService.createIdea(data),
+        mutationFn: (data: FormData) => ideaService.createIdea(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['ideas'] });
             showToast.success('Idea submitted successfully');
@@ -32,7 +31,7 @@ export const useIdeas = (params?: any) => {
     });
 
     const updateIdeaMutation = useMutation({
-        mutationFn: ({ id, data }: { id: string; data: Partial<IProjectIdea> }) => ideaService.updateIdea(id, data),
+        mutationFn: ({ id, data }: { id: string; data: FormData }) => ideaService.updateIdea(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['ideas'] });
             queryClient.invalidateQueries({ queryKey: ['idea'] });

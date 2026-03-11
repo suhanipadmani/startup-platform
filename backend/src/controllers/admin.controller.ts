@@ -84,8 +84,12 @@ export const approveProject = async (req: AuthRequest, res: Response) => {
         }
 
         res.json({ message: "Project approved" });
-    } catch (error) {
-        res.status(500).json({ message: "Error approving project" });
+    } catch (error: any) {
+        console.error("Error approving project:", error);
+        res.status(500).json({ 
+            message: "Error approving project",
+            error: error.message || String(error)
+        });
     }
 };
 
@@ -120,18 +124,75 @@ export const rejectProject = async (req: AuthRequest, res: Response) => {
         }
 
         res.json({ message: "Project rejected" });
-    } catch (error) {
-        res.status(500).json({ message: "Error rejecting project" });
+    } catch (error: any) {
+        console.error("Error rejecting project:", error);
+        res.status(500).json({ 
+            message: "Error rejecting project",
+            error: error.message || String(error)
+        });
     }
 };
 
 // User Management
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const users = await User.find().select("-password").sort({ createdAt: -1 });
-        res.json(users);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const search = req.query.search as string;
+
+        const filter: any = {};
+        if (search) {
+            filter.$or = [
+                { name: { $regex: new RegExp(search, 'i') } },
+                { email: { $regex: new RegExp(search, 'i') } }
+            ];
+        }
+
+        const skip = (page - 1) * limit;
+
+        const totalDocs = await User.countDocuments(filter);
+        const users = await User.find(filter)
+            .select("-password")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            docs: users,
+            totalDocs,
+            limit,
+            page,
+            totalPages: Math.ceil(totalDocs / limit)
+        });
     } catch (error) {
         res.status(500).json({ message: "Error fetching users" });
+    }
+};
+
+export const exportUsers = async (req: Request, res: Response) => {
+    try {
+        const search = req.query.search as string;
+        const filter: any = {};
+        if (search) {
+            filter.$or = [
+                { name: { $regex: new RegExp(search, 'i') } },
+                { email: { $regex: new RegExp(search, 'i') } }
+            ];
+        }
+
+        const users = await User.find(filter).select("-password").sort({ createdAt: -1 });
+
+        let csv = 'Name,Email,Role,Joined Date\n';
+        users.forEach(user => {
+            const joinedDate = new Date(user.createdAt).toLocaleDateString();
+            csv += `"${user.name}","${user.email}","${user.role}","${joinedDate}"\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=users_export.csv');
+        res.status(200).send(csv);
+    } catch (error) {
+        res.status(500).json({ message: "Error exporting users" });
     }
 };
 

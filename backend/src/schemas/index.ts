@@ -69,5 +69,6 @@ export const ideaSchema = z.object({
         solution: z.string().min(20),
         targetMarket: z.string().min(5),
         techStack: z.array(z.string()).min(1),
+        teamDetails: z.string().min(10, 'Team details must be at least 10 characters'),
     }),
 });

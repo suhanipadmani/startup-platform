@@ -29,6 +29,21 @@ const projectIdeaSchema = new Schema(
             type: [String],
             required: true,
         },
+        teamDetails: {
+            type: String,
+            required: true,
+        },
+        pitchDeckUrl: {
+            type: String,
+            default: "",
+        },
+        documents: [
+            {
+                name: { type: String, required: true },
+                url: { type: String, required: true },
+                uploadedAt: { type: Date, default: Date.now }
+            }
+        ],
         status: {
             type: String,
             enum: ["pending", "approved", "rejected"],

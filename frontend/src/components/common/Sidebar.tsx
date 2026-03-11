@@ -129,7 +129,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             )}>
                 <div className="flex items-center justify-between h-16 px-6 border-b shrink-0">
                     <Link to="/" className="text-xl font-bold text-gray-800">
-                        Startup Platform
+                        IdeaHub
                     </Link>
                     <button className="md:hidden" onClick={onClose}>
                         <X className="w-6 h-6 text-gray-500" />

@@ -22,13 +22,27 @@ export const ideaService = {
         return response.data;
     },
 
-    createIdea: async (data: Partial<IProjectIdea>) => {
-        const response = await api.post<IProjectIdea>('/ideas', data);
+    createIdea: async (data: FormData) => {
+        const response = await api.post<IProjectIdea>('/ideas', data, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 
-    updateIdea: async (id: string, data: Partial<IProjectIdea>) => {
-        const response = await api.put<IProjectIdea>(`/ideas/${id}`, data);
+    updateIdea: async (id: string, data: FormData) => {
+        const response = await api.put<IProjectIdea>(`/ideas/${id}`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    uploadDocument: async (id: string, name: string, file: File) => {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('document', file);
+        const response = await api.post<IProjectIdea>(`/ideas/${id}/documents`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 

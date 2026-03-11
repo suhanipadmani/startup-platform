@@ -4,6 +4,7 @@ import {
   approveProject,
   rejectProject,
   getAllUsers,
+  exportUsers,
   deleteUser,
   updateUser
 } from "../controllers/admin.controller";
@@ -24,6 +25,7 @@ router.put("/ideas/:id/reject", validate(reviewSchema), rejectProject);
 router.get("/analytics/stats", getSystemStats);
 router.get("/analytics/growth", getGrowthStats);
 
+router.get("/users/export", exportUsers);
 router.get("/users", getAllUsers);
 router.delete("/users/:id", deleteUser);
 router.put("/users/:id", validate(updateUserSchema), updateUser);

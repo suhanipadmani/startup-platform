@@ -3,14 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '../../services/user.service';
 import { Loader } from '../../components/ui/Loader';
 import { Button } from '../../components/ui/Button';
-import { Trash2, Edit2 } from 'lucide-react';
+import { Trash2, Edit2, Search, Download } from 'lucide-react';
 import { showToast } from '../../utils/toast';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
+import { Pagination } from '../../components/ui/Pagination';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const userSchema = z.object({
     name: z.string().min(2, 'Name is too short'),
@@ -24,10 +26,18 @@ const UsersList = () => {
     const queryClient = useQueryClient();
     const [editingUser, setEditingUser] = useState<any | null>(null);
 
-    const { data: users, isLoading } = useQuery({
-        queryKey: ['admin', 'users'],
-        queryFn: userService.getAllUsers,
+    const [page, setPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearch = useDebounce(searchTerm, 500);
+    const limit = 10;
+
+    const { data: usersData, isLoading } = useQuery({
+        queryKey: ['admin', 'users', page, debouncedSearch],
+        queryFn: () => userService.getAllUsers({ page, limit, search: debouncedSearch }),
     });
+
+    const users = usersData?.docs || [];
+    const totalPages = usersData?.totalPages || 1;
 
     const deleteMutation = useMutation({
         mutationFn: userService.deleteUser,
@@ -50,17 +60,21 @@ const UsersList = () => {
         register,
         handleSubmit,
         reset,
+        watch,
         formState: { errors },
     } = useForm<UserFormData>({
         resolver: zodResolver(userSchema),
     });
+
+    const currentRole = watch('role');
+    const isFounder = currentRole === 'founder';
 
     const handleEdit = (user: any) => {
         setEditingUser(user);
         reset({
             name: user.name,
             email: user.email,
-            role: user.role,
+            role: user.role
         });
     };
 
@@ -74,13 +88,44 @@ const UsersList = () => {
         updateMutation.mutate(data);
     };
 
-    if (isLoading) return <div className="h-96 flex items-center justify-center"><Loader size="lg" /></div>;
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(e.target.value);
+        setPage(1);
+    };
+
+    const handleExport = async () => {
+        try {
+            await userService.exportUsers({ search: debouncedSearch });
+            showToast.success('Users exported successfully');
+        } catch (error) {
+            showToast.error('Failed to export users');
+        }
+    };
 
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+        <div className="space-y-6 pb-24">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+                <Button variant="outline" onClick={handleExport}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                </Button>
+            </div>
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {/* Filters */}
+            <div className="flex bg-white p-4 rounded-lg shadow-sm">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Input
+                        placeholder="Search users by name or email..."
+                        className="pl-10"
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                    />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden min-h-[400px]">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -91,37 +136,58 @@ const UsersList = () => {
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {users?.map((user: any) => (
-                                <tr key={user._id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{user.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                                            }`}>
-                                            {user.role}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                                        <Button size="sm" variant="ghost" onClick={() => handleEdit(user)}>
-                                            <Edit2 className="w-4 h-4 text-blue-600" />
-                                        </Button>
-                                        <Button size="sm" variant="ghost" onClick={() => handleDelete(user._id)}>
-                                            <Trash2 className="w-4 h-4 text-red-600" />
-                                        </Button>
+                        <tbody className="divide-y divide-gray-200 relative">
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-20 text-center">
+                                        <Loader size="lg" />
                                     </td>
                                 </tr>
-                            ))}
+                            ) : users.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-10 text-center text-gray-500">
+                                        No users found matches your search.
+                                    </td>
+                                </tr>
+                            ) : (
+                                users.map((user: any) => (
+                                    <tr key={user._id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{user.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                                                {user.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
+                                            <Button size="sm" variant="ghost" onClick={() => handleEdit(user)}>
+                                                <Edit2 className="w-4 h-4 text-blue-600" />
+                                            </Button>
+                                            <Button size="sm" variant="ghost" onClick={() => handleDelete(user._id)}>
+                                                <Trash2 className="w-4 h-4 text-red-600" />
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
+            {totalPages > 1 && (
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                />
+            )}
+
             {/* Edit Modal */}
             <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)} title="Edit User">
                 <form onSubmit={handleSubmit(onUpdate)} className="space-y-4">
                     <Input label="Name" error={errors.name?.message} {...register('name')} />
-                    <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
+                    <Input label="Email" type="email" disabled={isFounder} error={errors.email?.message} {...register('email')} />
                     <Select
                         label="Role"
                         options={[

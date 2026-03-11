@@ -21,6 +21,13 @@ export interface IProjectIdea {
     solution: string;
     targetMarket: string;
     techStack: string[];
+    teamDetails: string;
+    pitchDeckUrl?: string;
+    documents?: Array<{
+        name: string;
+        url: string;
+        uploadedAt: string;
+    }>;
     status: ProjectStatus;
     adminComment?: string;
     createdAt: string;

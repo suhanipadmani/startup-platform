@@ -1,8 +1,8 @@
-import type { ProjectStatus } from '../types';
+import type { ProjectStatus } from '../../types';
 import clsx from 'clsx';
 
 export default function StatusBadge({ status }: { status: ProjectStatus }) {
-    const styles = {
+    const styles: Record<ProjectStatus, string> = {
         pending: 'bg-yellow-100 text-yellow-800',
         approved: 'bg-green-100 text-green-800',
         rejected: 'bg-red-100 text-red-800',

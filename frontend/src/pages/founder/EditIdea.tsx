@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useIdeas, useIdea } from '../../hooks/useIdeas';
-import { IdeaForm, type IdeaFormData } from '../../components/founder/IdeaForm';
+import { IdeaForm } from '../../components/founder/IdeaForm';
 import { Loader } from '../../components/ui/Loader';
 import { Button } from '../../components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
@@ -29,7 +29,7 @@ const EditIdea = () => {
         );
     }
 
-    const onSubmit = (data: IdeaFormData) => {
+    const onSubmit = (data: FormData) => {
         updateIdea({ id: id!, data });
     };
 

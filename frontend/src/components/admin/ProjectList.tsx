@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ideaService } from '../../services/idea.service';
 import { Loader } from '../ui/Loader';
-import { Eye, Check, X, Filter } from 'lucide-react';
+import { Eye, Filter } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
-import { Textarea } from '../ui/Textarea';
-import { showToast } from '../../utils/toast';
+import { Pagination } from '../ui/Pagination';
 import type { IProjectIdea } from '../../types';
 import { useSocket } from '../../context/SocketContext';
 
@@ -14,15 +13,10 @@ interface ProjectListProps {
     initialStatus?: string;
     showFilters?: boolean;
     title?: string;
-    showActions?: boolean;
 }
 
-const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project Reviews', showActions = true }: ProjectListProps) => {
+const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project Reviews' }: ProjectListProps) => {
     const queryClient = useQueryClient();
-    const [selectedIdea, setSelectedIdea] = useState<IProjectIdea | null>(null);
-    const [action, setAction] = useState<'approve' | 'reject' | null>(null);
-    const [comment, setComment] = useState('');
-    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const { socket } = useSocket();
 
     useEffect(() => {
@@ -60,48 +54,7 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
     const projectList = paginationData?.docs || [];
     const totalPages = paginationData?.totalPages || 1;
 
-    const reviewMutation = useMutation({
-        mutationFn: async () => {
-            if (!selectedIdea || !action) return;
-            if (action === 'approve') {
-                return ideaService.approveIdea(selectedIdea._id, comment);
-            } else {
-                return ideaService.rejectIdea(selectedIdea._id, comment);
-            }
-        },
-        onSuccess: () => {
-            showToast.success(`Project ${action}d successfully`);
-            queryClient.invalidateQueries({ queryKey: ['admin', 'projects'] });
-            queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
-            closeActionModal();
-            closeViewModal();
-        },
-        onError: () => {
-            showToast.error('Failed to update project status');
-        }
-    });
-
-    const openViewModal = (idea: IProjectIdea) => {
-        setSelectedIdea(idea);
-        setIsViewModalOpen(true);
-    };
-
-    const closeViewModal = () => {
-        setSelectedIdea(null);
-        setIsViewModalOpen(false);
-    };
-
-    const openActionModal = (actionType: 'approve' | 'reject') => {
-        setAction(actionType);
-        setComment('');
-    };
-
-    const closeActionModal = () => {
-        setAction(null);
-        setComment('');
-    };
-
-    // Filter Change Handlers - Reset Page to 1
+    // Filters & Pagination
     const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setStatusFilter(e.target.value);
         setPage(1);
@@ -130,28 +83,8 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
         }
     };
 
-    // Generate Page Numbers
-    const getPageNumbers = () => {
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) {
-            if (
-                i === 1 ||
-                i === totalPages ||
-                (i >= page - 2 && i <= page + 2)
-            ) {
-                pages.push(i);
-            } else if (
-                i === page - 3 ||
-                i === page + 3
-            ) {
-                pages.push('...');
-            }
-        }
-        return pages.filter((val, index, arr) => arr.indexOf(val) === index);
-    };
-
     return (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col pb-24"> {/* pb-24 to make room for fixed pagination */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <h2 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -229,7 +162,7 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
                                             : 'Unknown'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${idea.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${idea.status === 'approved' ? 'bg-green-100 text-green-800' :
                                             idea.status === 'rejected' ? 'bg-red-100 text-red-800' :
                                                 'bg-yellow-100 text-yellow-800'
                                             }`}>
@@ -241,9 +174,11 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">{new Date(idea.createdAt).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <Button size="sm" variant="outline" onClick={() => openViewModal(idea)}>
-                                            <Eye className="w-4 h-4 mr-1" /> View
-                                        </Button>
+                                        <Link to={`/admin/projects/${idea._id}`}>
+                                            <Button size="sm" variant="outline">
+                                                <Eye className="w-4 h-4 mr-1" /> View
+                                            </Button>
+                                        </Link>
                                     </td>
                                 </tr>
                             ))
@@ -254,145 +189,13 @@ const ProjectList = ({ initialStatus = '', showFilters = true, title = 'Project 
 
             {/* Pagination */}
             {!isLoadingProjects && totalPages > 1 && (
-                <div className="fixed bottom-8 left-0 md:left-64 right-0 flex justify-center z-20 pointer-events-none">
-                    <div className="inline-flex items-center space-x-1 bg-white/95 backdrop-blur-sm p-2 rounded-full shadow-xl pointer-events-auto border border-gray-200">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handlePageChange(page - 1)}
-                            disabled={page === 1}
-                            className="rounded-full px-4"
-                        >
-                            Previous
-                        </Button>
-
-                        <div className="flex items-center px-2">
-                            {getPageNumbers().map((pageNum, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => typeof pageNum === 'number' ? handlePageChange(pageNum) : null}
-                                    disabled={typeof pageNum !== 'number'}
-                                    className={`w-10 h-10 flex items-center justify-center text-sm rounded-full transition-colors mx-0.5 ${pageNum === page
-                                        ? 'bg-blue-600 text-white'
-                                        : typeof pageNum === 'number'
-                                            ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                            : 'text-gray-500 cursor-default'
-                                        }`}
-                                >
-                                    {pageNum}
-                                </button>
-                            ))}
-                        </div>
-
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handlePageChange(page + 1)}
-                            disabled={page === totalPages}
-                            className="rounded-full px-4"
-                        >
-                            Next
-                        </Button>
-                    </div>
-                </div>
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
             )}
-
-            {/* View Idea Modal */}
-            <Modal
-                isOpen={isViewModalOpen}
-                onClose={closeViewModal}
-                title="Project Details"
-            >
-                {selectedIdea && (
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-sm font-medium text-gray-500">Project Title</h3>
-                            <p className="mt-1 text-lg font-semibold text-gray-900 break-words">{selectedIdea.title}</p>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-medium text-gray-500">Problem Statement</h3>
-                            <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md break-words whitespace-pre-wrap">{selectedIdea.problemStatement}</p>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-medium text-gray-500">Solution</h3>
-                            <p className="mt-1 text-gray-700 bg-gray-50 p-3 rounded-md break-words whitespace-pre-wrap">{selectedIdea.solution}</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500">Target Market</h3>
-                                <p className="mt-1 text-gray-700 break-words whitespace-pre-wrap">{selectedIdea.targetMarket}</p>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500">Tech Stack</h3>
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                    {selectedIdea.techStack.map((tech, i) => (
-                                        <span key={i} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {tech}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {selectedIdea.status === 'pending' && showActions && (
-                            <div className="flex justify-end space-x-3 pt-4 border-t">
-                                <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => openActionModal('reject')}>
-                                    <X className="w-4 h-4 mr-1" /> Reject
-                                </Button>
-                                <Button variant="outline" className="text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => openActionModal('approve')}>
-                                    <Check className="w-4 h-4 mr-1" /> Approve
-                                </Button>
-                            </div>
-                        )}
-                        {selectedIdea.status !== 'pending' && (
-                            <div className="pt-4 border-t">
-                                <p className="text-sm text-gray-500">
-                                    This project was <span className={`font-semibold ${selectedIdea.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>{selectedIdea.status}</span> on {new Date(selectedIdea.updatedAt).toLocaleDateString()}.
-                                </p>
-                                {selectedIdea.adminComment && (
-                                    <p className="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">
-                                        <strong>Admin Comment:</strong> {selectedIdea.adminComment}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </Modal>
-
-            {/* Action Modal (Approve/Reject confirmation) */}
-            <Modal
-                isOpen={!!action}
-                onClose={closeActionModal}
-                title={`${action === 'approve' ? 'Approve' : 'Reject'} Project`}
-            >
-                <div className="space-y-4">
-                    <p className="text-sm text-gray-500 break-words">
-                        You are about to {action} <strong>{selectedIdea?.title}</strong>. Please provide a comment for the founder.
-                    </p>
-                    <Textarea
-                        label="Admin Comment"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        rows={4}
-                        placeholder="Enter your feedback..."
-                    />
-                    <div className="flex justify-end space-x-3 pt-2">
-                        <Button variant="ghost" onClick={closeActionModal} disabled={reviewMutation.isPending}>Cancel</Button>
-                        <Button
-                            variant={action === 'approve' ? 'primary' : 'danger'}
-                            onClick={() => reviewMutation.mutate()}
-                            isLoading={reviewMutation.isPending}
-                            disabled={!comment.trim()}
-                        >
-                            Confirm {action === 'approve' ? 'Approval' : 'Rejection'}
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
+            {/* Actions previously handled via modals are now accessed from the detail page */}
         </div>
     );
 };
